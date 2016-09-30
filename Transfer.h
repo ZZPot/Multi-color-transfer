@@ -14,7 +14,7 @@ struct img_trans
 	void SetImg(std::string fname);
 	void SetImg(cv::Mat image);
 	void SetWeight(double weight = 0);
-	std::string file_name;
+	cv::String file_name;
 	cv::Mat img; // source img in lab color space // others in BGR
 	std::vector<double> channel_w; // please, between 0 and 100.
 	std::vector<double> mean;
