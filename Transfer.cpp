@@ -7,10 +7,12 @@
 img_trans::img_trans(std::string fname)
 {
 	SetImg(fname);
+	SetWeight();
 }
 img_trans::img_trans(cv::Mat image)
 {
 	SetImg(image);
+	SetWeight();
 }
 img_trans::img_trans()
 {}
@@ -20,13 +22,11 @@ void img_trans::SetImg(std::string fname)
 	img = cv::imread(file_name);
 	if(!img.channels())
 		return;
-	SetWeight();
 	GetImageParams(BGRtoLab(img), mean, stdd);
 }
 void img_trans::SetImg(cv::Mat image)
 {
 	img = image.clone();
-	SetWeight();
 	GetImageParams(BGRtoLab(img), mean, stdd);
 }
 void img_trans::SetWeight(double weight)
