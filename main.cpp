@@ -14,7 +14,7 @@ using namespace cv;
 	#define SOURCE_PIC "source/1.jpg"
 #else
 	// SET YOUR VIDEO
-	#define SOURCE_VIDEO "../Gojira - To Sirius.mp4" 
+	#define SOURCE_VIDEO "../Landscapes of Skye.mp4" 
 #endif
 #define MAX_WEIGHT_VAL	10
 #define WND_ROW			4
@@ -40,10 +40,10 @@ struct tb_param
 
 std::vector<std::string> images =	{	
 									"images/1.jpg",
-								//	"images/2.jpg", 
+									"images/2.jpg", 
 									"images/3.jpg", 
-								//	"images/4.jpg", 
-								//	"images/5.jpg"
+									"images/4.jpg", 
+									"images/5.jpg"
 									};
 cv::String wnd_result = "Result";
 cv::String wnd_original = "Original";
@@ -115,12 +115,13 @@ int main()
 	while(1)
 	{
 		video >> frame;
+		resize(frame, frame, Size(0, 0), 0.3f, 0.3f); // video was too big
 		imshow(wnd_original, frame);
 		ref_param.source.SetImg(frame);
 		
 		ref_param.source.img = BGRtoLab(ref_param.source.img);
 		RefreshResult(&ref_param);
-		if(waitKey(10) >= 0) break;
+		if(waitKey(5) >= 0) break;
 	}
 	video.release();
 #else
