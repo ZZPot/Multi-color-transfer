@@ -7,7 +7,7 @@
 void GetMeanStdd(cv::Mat img, std::vector<double>& mean, std::vector<double>& stdd); // get mean and stdd
 
 // Reinhard's method
-cv::Mat Reinhard(img_trans& source, std::vector<img_trans*>& layers);
+cv::Mat Reinhard(img_trans& source, std::map<unsigned, img_trans*>& layers);
 cv::Mat BGRtoLab(cv::Mat input);
 cv::Mat LabtoBGR(cv::Mat input);
 

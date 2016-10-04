@@ -4,7 +4,6 @@
 
 /*Reinhard's method*/
 
-
 #pragma region CONVERT MATRICES
 cv::Mat RGB_to_LMS = (cv::Mat_<float>(3,3) <<	0.3811f, 0.5783f, 0.0402f,
 												0.1967f, 0.7244f, 0.0782f,
@@ -23,7 +22,7 @@ cv::Mat lab_to_LMS = (cv::Mat_<float>(3,3) <<	_x, _y, _z,
 												_x, -2*_y, 0);
 #pragma endregion
 
-cv::Mat Reinhard(img_trans& source, std::vector<img_trans*>& layers)
+cv::Mat Reinhard(img_trans& source, std::map<unsigned, img_trans*>& layers)
 {
 	/* 
 		Once converted it remains in
@@ -47,9 +46,9 @@ cv::Mat Reinhard(img_trans& source, std::vector<img_trans*>& layers)
 	{
 		for(unsigned i = 0; i < IT_CHANNELS; i++)
 		{
-			if(layer->channel_w[i] < 0)
+			if(layer.second->channel_w[i] < 0)
 				continue;
-			divider[i] += layer->channel_w[i];
+			divider[i] += layer.second->channel_w[i];
 		}
 	}
 
@@ -63,12 +62,12 @@ cv::Mat Reinhard(img_trans& source, std::vector<img_trans*>& layers)
 	for(auto& layer :  layers)
 	{	for(unsigned i = 0; i < IT_CHANNELS; i++)
 		{
-			double layer_weight = layer->channel_w[i]/divider[i];
-			double stdd_koef =	layer->params[METHOD_REINHARD]->GetParam(REINHARD_STDD, i) / 
+			double layer_weight = layer.second->channel_w[i]/divider[i];
+			double stdd_koef =	layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_STDD, i) / 
 								source.params[METHOD_REINHARD]->GetParam(REINHARD_STDD, i);
 			res_channels[i] += 
 				((lab_channels[i] - source.params[METHOD_REINHARD]->GetParam(REINHARD_MEAN, i))
-				* stdd_koef + layer->params[METHOD_REINHARD]->GetParam(REINHARD_MEAN, i)) * layer_weight;
+				* stdd_koef + layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_MEAN, i)) * layer_weight;
 		}
 	}
 	cv::Mat res;

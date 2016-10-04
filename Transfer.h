@@ -84,8 +84,10 @@ class ColorMachine
 public:
 	ColorMachine(std::string name = "");
 	virtual ~ColorMachine();
-	void AddLayer(cv::Mat layer, std::string name = "");
-	void AddLayer(std::string file_name);
+	unsigned AddLayer(cv::Mat layer, std::string name = "");
+	unsigned AddLayer(std::string file_name);
+	img_trans* GetLayer(unsigned layer_id);
+	void DeleteLayer(unsigned layer_id);
 	void SetSource(cv::Mat source);
 	void SetSource(std::string file_name);
 	void Prepare(transfer_method method);
@@ -95,14 +97,15 @@ public:
 	void ShowWindows(bool show);
 protected:
 	img_trans _source;
-	std::vector<img_trans*> _layers;
+	std::map<unsigned, img_trans*> _layers;
+	unsigned _next_id;
 	cv::String _wnd_result;
 	cv::String _wnd_original;
 	std::string _name;
 	bool _show;
 	transfer_method _current_method;
 };
-cv::Mat CTW(img_trans& source, std::vector<img_trans*>& layers, transfer_method method = METHOD_NONE);
+cv::Mat CTW(img_trans& source, std::map<unsigned, img_trans*>& layers, transfer_method method = METHOD_NONE);
 std::string CreateRandomName(unsigned num_chars, std::string prefix = "", std::string postfix = "");
 void CreateWindowIT(img_trans* it, int width, int height, cv::String& wnd_name);
 void GetWindowsSize(int* width, int* height, unsigned count = 3);

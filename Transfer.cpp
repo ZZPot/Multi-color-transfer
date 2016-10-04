@@ -118,7 +118,7 @@ void img_trans::AddParams(transfer_method method) // created by new
 	ConvertTo(CS_BGR);
 	params[method]->SetParams(img);
 }
-cv::Mat CTW(img_trans& source, std::vector<img_trans*>& layers, transfer_method method)
+cv::Mat CTW(img_trans& source, std::map<unsigned, img_trans*>& layers, transfer_method method)
 {
 	/*
 		Sum of all layers and input wights
@@ -161,15 +161,17 @@ ColorMachine::ColorMachine(std::string name)
 		_source.tb_params[i].tb_name = tb_names[i];
 		_source.tb_params[i].cmachine = this;
 	}
+	_next_id = 1;
 }
 ColorMachine::~ColorMachine()
 {
 	for(auto layer: _layers)
 	{
-		delete layer;
+		ShowWindows(false);
+		delete layer.second;
 	}
 }
-void ColorMachine::AddLayer(cv::Mat layer, std::string name)
+unsigned ColorMachine::AddLayer(cv::Mat layer, std::string name)
 {
 	img_trans* temp = new img_trans(layer);
 	if(name.size())
@@ -187,20 +189,39 @@ void ColorMachine::AddLayer(cv::Mat layer, std::string name)
 		temp->tb_params[i].tb_name = tb_names[i];
 		temp->tb_params[i].cmachine = this;
 	}
-	_layers.push_back(temp);
-}
-void ColorMachine::AddLayer(std::string file_name)
-{
-	img_trans* temp = new img_trans(file_name);
-	temp->name = file_name + _name; // "image/1.jpg_name"
-	for(unsigned i = 0; i < TB_COUNT; i++)
+	_layers[_next_id] = temp;
+	if(_show)
 	{
-		temp->tb_params[i].it = temp;
-		temp->tb_params[i].channel = i;
-		temp->tb_params[i].tb_name = tb_names[i];
-		temp->tb_params[i].cmachine = this;
+		int wnd_w, wnd_h;
+		GetWindowsSize(&wnd_w, &wnd_h, WND_ROW);
+		CreateWindowIT(temp, wnd_w, wnd_h, temp->name);
+			moveWindow(temp->name,
+				(wnd_w + FRAMES_WIDTH) * (_layers.size() % WND_ROW),
+				(wnd_h + TOOLBAR_HEIGHT) * (_layers.size() / WND_ROW));
 	}
-	_layers.push_back(temp);
+	return _next_id++;
+}
+unsigned ColorMachine::AddLayer(std::string file_name)
+{
+	return AddLayer(cv::imread(file_name), file_name);
+}
+img_trans* ColorMachine::GetLayer(unsigned layer_id)
+{
+	auto found = _layers.find(layer_id);
+	if(found != _layers.end())
+		return found->second;
+	return nullptr;
+}
+void ColorMachine::DeleteLayer(unsigned layer_id)
+{
+	auto found = _layers.find(layer_id);
+	if(found != _layers.end())
+	{
+		if(_show)
+			cv::destroyWindow(found->second->name);
+		delete found->second;
+		_layers.erase(found);
+	}
 }
 void ColorMachine::SetSource(cv::Mat source)
 {
@@ -211,15 +232,14 @@ void ColorMachine::SetSource(cv::Mat source)
 }
 void ColorMachine::SetSource(std::string file_name)
 {
-	_source.SetImg(file_name);
-	_source.params.clear();
+	SetSource(cv::imread(file_name));
 }
  void ColorMachine::Prepare(transfer_method method)
 {
 	_source.AddParams(method);
 	for(auto layer: _layers)
 	{
-		layer->AddParams(method);
+		layer.second->AddParams(method);
 	}
 }
 transfer_method ColorMachine::SetMethod(transfer_method new_method)
@@ -249,15 +269,17 @@ void ColorMachine::ShowWindows(bool show)
 	{
 		int wnd_w, wnd_h;
 		GetWindowsSize(&wnd_w, &wnd_h, WND_ROW);
-		for(unsigned i = 0; i < _layers.size(); i++)
+		unsigned row_count = 0;
+		for(auto layer: _layers)
 		{
-			CreateWindowIT(_layers[i], wnd_w, wnd_h, _layers[i]->name);
-			moveWindow(_layers[i]->name,
-				(wnd_w + FRAMES_WIDTH) * (i % WND_ROW),
-				(wnd_h + TOOLBAR_HEIGHT) * (i / WND_ROW));
+			CreateWindowIT(layer.second, wnd_w, wnd_h, layer.second->name);
+			moveWindow(layer.second->name,
+				(wnd_w + FRAMES_WIDTH) * (row_count % WND_ROW),
+				(wnd_h + TOOLBAR_HEIGHT) * (row_count / WND_ROW));
+			row_count++;
 		}
 		CreateWindowIT(&_source, wnd_w, wnd_h, _wnd_original);
-		int wnd_top = (_layers.size() + WND_ROW - 1) / WND_ROW  * (wnd_h + TOOLBAR_HEIGHT);
+		int wnd_top = (row_count + WND_ROW - 1) / WND_ROW  * (wnd_h + TOOLBAR_HEIGHT);
 		moveWindow(_wnd_original, 0, wnd_top);
 		namedWindow(_wnd_result);
 		moveWindow(_wnd_result, wnd_w + FRAMES_WIDTH, wnd_top);
@@ -265,7 +287,7 @@ void ColorMachine::ShowWindows(bool show)
 	else
 	{
 		for(auto& layer: _layers)
-			destroyWindow(layer->name);
+			destroyWindow(layer.second->name);
 		destroyWindow(_wnd_original);
 		destroyWindow(_wnd_result);
 	}
