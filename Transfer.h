@@ -73,7 +73,7 @@ struct img_trans
 
 	cv::String name;
 	cv::Mat img;
-	std::vector<double> channel_w;
+	cv::Scalar channel_w;
 	color_space	current_cs;
 	std::map<transfer_method, CTParams*> params; 
 	tb_param tb_params[TB_COUNT]; 

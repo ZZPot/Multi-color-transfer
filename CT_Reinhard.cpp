@@ -22,6 +22,8 @@ cv::Mat lab_to_LMS = (cv::Mat_<float>(3,3) <<	_x, _y, _z,
 												_x, -2*_y, 0);
 #pragma endregion
 
+ #define PER_CHANNEL
+
 cv::Mat Reinhard(img_trans& source, std::map<unsigned, img_trans*>& layers)
 {
 	/* 
@@ -32,16 +34,10 @@ cv::Mat Reinhard(img_trans& source, std::map<unsigned, img_trans*>& layers)
 		transfer applied many times.
 	*/
 	source.ConvertTo(CS_Lalphabeta);
+	cv::Mat res;
 
-	std::vector<double> divider;
-	divider.resize(IT_CHANNELS);
-	for(unsigned i = 0; i < IT_CHANNELS; i++)
-	{
-		divider[i] = 0;
-		if(source.channel_w[i] < 0)
-			continue;
-		divider[i] += source.channel_w[i];
-	}
+	cv::Scalar divider(0, 0, 0);
+	
 	for(auto& layer :  layers)
 	{
 		for(unsigned i = 0; i < IT_CHANNELS; i++)
@@ -51,18 +47,26 @@ cv::Mat Reinhard(img_trans& source, std::map<unsigned, img_trans*>& layers)
 			divider[i] += layer.second->channel_w[i];
 		}
 	}
+	for(unsigned i = 0; i < IT_CHANNELS; i++)
+	{
+		if(source.channel_w[i] < 0)
+			continue;
+		divider[i] += source.channel_w[i];
+		divider[i] = 1 / divider[i];
+	}
 
+#ifdef PER_CHANNEL
 	std::vector<cv::Mat> res_channels, lab_channels;
 	cv::split(source.img, res_channels);
 	cv::split(source.img, lab_channels);
 	// init
 	for(unsigned i = 0; i < IT_CHANNELS; i++)
-		res_channels[i] *= source.channel_w[i]/divider[i];
+		res_channels[i] *= source.channel_w[i] * divider[i];
 	// add
 	for(auto& layer :  layers)
 	{	for(unsigned i = 0; i < IT_CHANNELS; i++)
 		{
-			double layer_weight = layer.second->channel_w[i]/divider[i];
+			double layer_weight = layer.second->channel_w[i] * divider[i];
 			double stdd_koef =	layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_STDD, i) / 
 								source.params[METHOD_REINHARD]->GetParam(REINHARD_STDD, i);
 			res_channels[i] += 
@@ -70,8 +74,33 @@ cv::Mat Reinhard(img_trans& source, std::map<unsigned, img_trans*>& layers)
 				* stdd_koef + layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_MEAN, i)) * layer_weight;
 		}
 	}
-	cv::Mat res;
 	cv::merge(res_channels, res);
+#else
+
+	cv::multiply(source.img, source.channel_w.mul(divider), res);
+	cv::Scalar	mean_src(0, 0, 0), stdd_src(0, 0, 0);
+	for(unsigned i = 0; i < IT_CHANNELS; i++)
+	{
+		mean_src[i] = source.params[METHOD_REINHARD]->GetParam(REINHARD_MEAN, i);
+		stdd_src[i] = source.params[METHOD_REINHARD]->GetParam(REINHARD_STDD, i);
+	}
+	cv::Mat minus_mean = source.img - mean_src;
+	for(auto& layer :  layers)
+	{
+		cv::Mat temp;
+		cv::Scalar	mean_layer(0, 0, 0), koef(0, 0, 0);
+		for(unsigned i = 0; i < IT_CHANNELS; i++)
+		{
+			mean_layer[i] = layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_MEAN, i);
+			koef[i] = layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_STDD, i) / stdd_src[i];
+		}
+		cv::multiply(minus_mean, koef, temp);
+		temp += mean_layer;
+
+		cv::multiply(temp, layer.second->channel_w.mul(divider), temp);
+		res += temp;
+	}
+#endif
 	return LabtoBGR(res);
 }
 cv::Mat BGRtoLab(cv::Mat input)

@@ -12,7 +12,7 @@ using namespace cv;
 	#define SOURCE_PIC "source/1.jpg"
 #else
 	// SET YOUR VIDEO
-	#define SOURCE_VIDEO "../Landscapes of Skye.mp4"
+	#define SOURCE_VIDEO "../Time-lapse.flv"
 #endif
 
 std::vector<std::string> images = {

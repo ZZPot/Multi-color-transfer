@@ -10,17 +10,15 @@
 
 std::string tb_names[3] = {"W1", "W2", "W3"};
 
-img_trans::img_trans(std::string fname)
+img_trans::img_trans(std::string fname): channel_w(0, 0, 0)
 {
 	SetImg(fname);
-	SetWeight();
 }
-img_trans::img_trans(cv::Mat image)
+img_trans::img_trans(cv::Mat image): channel_w(0, 0, 0)
 {
 	SetImg(image);
-	SetWeight();
 }
-img_trans::img_trans()
+img_trans::img_trans(): channel_w(0, 0, 0)
 {
 	current_cs = CS_UNDEFINED;
 }
@@ -49,8 +47,6 @@ void img_trans::SetImg(cv::Mat image)
 }
 void img_trans::SetWeight(double weight)
 {
-	if(channel_w.size() < IT_CHANNELS)
-		channel_w.resize(IT_CHANNELS);
 	channel_w[0] = weight;
 	channel_w[1] = weight;
 	channel_w[2] = weight;
