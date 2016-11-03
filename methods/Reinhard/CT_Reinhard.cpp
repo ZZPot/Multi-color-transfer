@@ -1,6 +1,5 @@
 #include "CT_Reinhard.h"
 #include <opencv2/imgproc.hpp>
-#include "Transfer.h"
 
 /*Reinhard's method*/
 
@@ -22,7 +21,7 @@ cv::Mat lab_to_LMS = (cv::Mat_<float>(3,3) <<	_x, _y, _z,
 												_x, -2*_y, 0);
 #pragma endregion
 
- #define PER_CHANNEL
+#define PER_CHANNEL
 
 cv::Mat Reinhard(img_trans& source, std::map<unsigned, img_trans*>& layers)
 {
@@ -36,42 +35,27 @@ cv::Mat Reinhard(img_trans& source, std::map<unsigned, img_trans*>& layers)
 	source.ConvertTo(CS_Lalphabeta);
 	cv::Mat res;
 
-	cv::Scalar divider(0, 0, 0);
-	
-	for(auto& layer :  layers)
-	{
-		for(unsigned i = 0; i < IT_CHANNELS; i++)
-		{
-			if(layer.second->channel_w[i] < 0)
-				continue;
-			divider[i] += layer.second->channel_w[i];
-		}
-	}
-	for(unsigned i = 0; i < IT_CHANNELS; i++)
-	{
-		if(source.channel_w[i] < 0)
-			continue;
-		divider[i] += source.channel_w[i];
-		divider[i] = 1 / divider[i];
-	}
-
+	cv::Scalar divider = CalcDivider(source, layers);
 #ifdef PER_CHANNEL
 	std::vector<cv::Mat> res_channels, lab_channels;
 	cv::split(source.img, res_channels);
 	cv::split(source.img, lab_channels);
+
 	// init
+	cv::Scalar src_stdd(0); 
 	for(unsigned i = 0; i < IT_CHANNELS; i++)
+	{
 		res_channels[i] *= source.channel_w[i] * divider[i];
+		lab_channels[i] -= source.params[METHOD_REINHARD]->GetParam(REINHARD_MEAN).at<double>(i); // same for all layers
+		src_stdd[i] = source.params[METHOD_REINHARD]->GetParam(REINHARD_STDD).at<double>(i); // to not to call it every time in loop
+	}
 	// add
 	for(auto& layer :  layers)
 	{	for(unsigned i = 0; i < IT_CHANNELS; i++)
 		{
 			double layer_weight = layer.second->channel_w[i] * divider[i];
-			double stdd_koef =	layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_STDD, i) / 
-								source.params[METHOD_REINHARD]->GetParam(REINHARD_STDD, i);
-			res_channels[i] += 
-				((lab_channels[i] - source.params[METHOD_REINHARD]->GetParam(REINHARD_MEAN, i))
-				* stdd_koef + layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_MEAN, i)) * layer_weight;
+			double stdd_koef =	layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_STDD).at<double>(i) / src_stdd[i];
+			res_channels[i] += (lab_channels[i] * stdd_koef + layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_MEAN).at<double>(i)) * layer_weight;
 		}
 	}
 	cv::merge(res_channels, res);
@@ -81,8 +65,8 @@ cv::Mat Reinhard(img_trans& source, std::map<unsigned, img_trans*>& layers)
 	cv::Scalar	mean_src(0, 0, 0), stdd_src(0, 0, 0);
 	for(unsigned i = 0; i < IT_CHANNELS; i++)
 	{
-		mean_src[i] = source.params[METHOD_REINHARD]->GetParam(REINHARD_MEAN, i);
-		stdd_src[i] = source.params[METHOD_REINHARD]->GetParam(REINHARD_STDD, i);
+		mean_src[i] = source.params[METHOD_REINHARD]->GetParam(REINHARD_MEAN).at<double>(i);
+		stdd_src[i] = source.params[METHOD_REINHARD]->GetParam(REINHARD_STDD).at<double>(i);
 	}
 	cv::Mat minus_mean = source.img - mean_src;
 	for(auto& layer :  layers)
@@ -91,8 +75,8 @@ cv::Mat Reinhard(img_trans& source, std::map<unsigned, img_trans*>& layers)
 		cv::Scalar	mean_layer(0, 0, 0), koef(0, 0, 0);
 		for(unsigned i = 0; i < IT_CHANNELS; i++)
 		{
-			mean_layer[i] = layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_MEAN, i);
-			koef[i] = layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_STDD, i) / stdd_src[i];
+			mean_layer[i] = layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_MEAN).at<double>(i);
+			koef[i] = layer.second->params[METHOD_REINHARD]->GetParam(REINHARD_STDD).at<double>(i) / stdd_src[i];
 		}
 		cv::multiply(minus_mean, koef, temp);
 		temp += mean_layer;
@@ -131,31 +115,19 @@ cv::Mat LabtoBGR(cv::Mat input)
 	cv::cvtColor(img_RGB, img_BGR, CV_RGB2BGR);
 	return img_BGR;
 }
-void GetMeanStdd(cv::Mat img, std::vector<double>& mean, std::vector<double>& stdd)
-{
-	cv::Mat _mean, _stdd;
-	cv::meanStdDev(img, _mean, _stdd);
-	mean.resize(IT_CHANNELS);
-	stdd.resize(IT_CHANNELS);
-	for(unsigned i = 0; i < IT_CHANNELS; i++)
-	{
-		mean[i] = _mean.at<double>(i);
-		stdd[i] = _stdd.at<double>(i);
-	}
-}
 void CTP_Reinhard::SetParams(cv::Mat img)
 {
-	GetMeanStdd(BGRtoLab(img), mean, stdd);
+	cv::meanStdDev(img, mean, stdd);
 }
-double CTP_Reinhard::GetParam(int param, int number)
+cv::Mat CTP_Reinhard::GetParam(int param)
 {
 	// no number checking here
 	switch(param)
 	{
 	case REINHARD_MEAN:
-		return mean[number];
+		return mean;
 	case REINHARD_STDD:
-		return stdd[number];
+		return stdd;
 	}
-	return 0;
+	return cv::Mat();
 }

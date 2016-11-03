@@ -4,7 +4,8 @@
 #include <opencv2/highgui.hpp>
 #include <stdio.h>
 #include <stdlib.h>
-#include "CT_Reinhard.h"
+#include "methods/Reinhard/CT_Reinhard.h"
+#include "methods/Xiao/CT_Xiao.h"
 
 #pragma warning(disable: 4244 4267 4996)
 
@@ -133,6 +134,8 @@ cv::Mat CTW(img_trans& source, std::map<unsigned, img_trans*>& layers, transfer_
 		return source.img.clone();
 	case METHOD_REINHARD:
 		return Reinhard(source, layers);
+	case METHOD_XIAO:
+		return Xiao(source, layers);
 	}
 	return cv::Mat();
 }
@@ -230,7 +233,7 @@ void ColorMachine::SetSource(std::string file_name)
 {
 	SetSource(cv::imread(file_name));
 }
- void ColorMachine::Prepare(transfer_method method)
+void ColorMachine::Prepare(transfer_method method)
 {
 	_source.AddParams(method);
 	for(auto layer: _layers)
@@ -341,6 +344,29 @@ CTParams* GetCTP(transfer_method method) // can't make with template
 	{
 	case METHOD_REINHARD:
 		return new CTP_Reinhard;
+	case METHOD_XIAO:
+		return new CTP_Xiao;
 	}
 	return nullptr;
+}
+cv::Scalar CalcDivider(img_trans& source, std::map<unsigned, img_trans*>& layers)
+{
+	cv::Scalar divider(0, 0, 0);
+	for(auto& layer :  layers)
+	{
+		for(unsigned i = 0; i < IT_CHANNELS; i++)
+		{
+			if(layer.second->channel_w[i] < 0)
+				continue;
+			divider[i] += layer.second->channel_w[i];
+		}
+	}
+	for(unsigned i = 0; i < IT_CHANNELS; i++)
+	{
+		if(source.channel_w[i] < 0)
+			continue;
+		divider[i] += source.channel_w[i];
+		divider[i] = 1 / divider[i];
+	}
+	return divider;
 }

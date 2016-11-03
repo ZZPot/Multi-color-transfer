@@ -37,6 +37,7 @@ enum transfer_method
 {
 	METHOD_NONE	= 0,
 	METHOD_REINHARD,
+	METHOD_XIAO,
 	METHOD_MAX
 };
 
@@ -45,7 +46,7 @@ class CTParams
 public:
 	virtual ~CTParams(){}
 	virtual void SetParams(cv::Mat img) = 0;
-	virtual double GetParam(int param, int number) = 0;
+	virtual cv::Mat GetParam(int param) = 0;
 };
 
 struct img_trans;
@@ -111,3 +112,4 @@ void CreateWindowIT(img_trans* it, int width, int height, cv::String& wnd_name);
 void GetWindowsSize(int* width, int* height, unsigned count = 3);
 void OnTrackBarChanged(int new_pos, void* param);
 CTParams* GetCTP(transfer_method method);
+cv::Scalar CalcDivider(img_trans& source, std::map<unsigned, img_trans*>& layers);

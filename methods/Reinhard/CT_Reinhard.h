@@ -1,10 +1,8 @@
 #pragma once
-#include "Transfer.h"
+#include "../../Transfer.h"
 
 #define REINHARD_MEAN	0
 #define REINHARD_STDD	1
-
-void GetMeanStdd(cv::Mat img, std::vector<double>& mean, std::vector<double>& stdd); // get mean and stdd
 
 // Reinhard's method
 cv::Mat Reinhard(img_trans& source, std::map<unsigned, img_trans*>& layers);
@@ -15,9 +13,8 @@ class CTP_Reinhard: public CTParams
 {
 public:
 	void SetParams(cv::Mat img);
-	double GetParam(int param, int number);
-	
+	cv::Mat GetParam(int param);
 protected:
-	std::vector<double> mean;
-	std::vector<double> stdd;
+	cv::Mat mean;
+	cv::Mat stdd;
 };
