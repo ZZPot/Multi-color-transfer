@@ -2,9 +2,8 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
-#include <conio.h>
-/*Xiao's method*/
 
+/*Xiao's method*/
 
 cv::Mat Xiao(img_trans& source, std::map<unsigned, img_trans*>& layers)
 {
