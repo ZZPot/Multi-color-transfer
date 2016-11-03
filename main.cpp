@@ -22,12 +22,14 @@ std::vector<std::string> images = {
 									"images/4.jpg",
 								//	"images/5.jpg"
 									};
+#define TEST_METHOD	METHOD_XIAO
+
 int main()
 {
 	ColorMachine cmachine("1");
 	for(auto image: images)
 		cmachine.AddLayer(image);
-	cmachine.SetMethod(METHOD_XIAO);
+	cmachine.SetMethod(TEST_METHOD);
 	#ifdef VIDEO
 		VideoCapture video;
 		video.open(SOURCE_VIDEO);
@@ -40,7 +42,7 @@ int main()
 			resize(frame, frame, Size(0, 0), 0.3f, 0.3f); // video was too big
 			cmachine.SetSource(frame);
 			cmachine.ShowWindows(true); // will work only first time
-			cmachine.Prepare(METHOD_XIAO); // first time for all, then only for source
+			cmachine.Prepare(TEST_METHOD); // first time for all, then only for source
 			cmachine.TransferColor();
 			if(waitKey(5) >= 0) 
 				break;
@@ -49,7 +51,7 @@ int main()
 	#else
 		cmachine.SetSource(SOURCE_PIC);
 		cmachine.ShowWindows(true);
-		cmachine.Prepare(METHOD_XIAO);
+		cmachine.Prepare(TEST_METHOD);
 		cmachine.TransferColor();
 		waitKey(0);
 	#endif
