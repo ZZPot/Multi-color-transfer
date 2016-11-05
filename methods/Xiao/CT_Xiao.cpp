@@ -12,6 +12,7 @@ cv::Mat Xiao(img_trans& source, std::map<unsigned, img_trans*>& layers)
 
 	// init
 	cv::Mat src1;
+	source.ConvertTo(CS_BGR);
 	source.img.convertTo(src1, CV_64FC3, 1 / 255.0);
 	src1 = AddChannel(src1);
 	cv::Mat SRT = source.params[METHOD_XIAO]->GetParam(XIAO_RIGHT);

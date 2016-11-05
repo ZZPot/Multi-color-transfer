@@ -8,7 +8,7 @@
 
 using namespace cv;
 
-#define VIDEO
+//#define VIDEO
 #ifdef VIDEO
 	// SET YOUR VIDEO
 	#define SOURCE_VIDEO "../Time-lapse.flv"
@@ -30,40 +30,39 @@ int main()
 		cmachine.AddLayer(image);
 	transfer_method method = METHOD_REINHARD;
 	cmachine.SetMethod(method);
-	#ifdef VIDEO
-		VideoCapture video;
-		video.open(SOURCE_VIDEO);
-		if(!video.isOpened())
-			return 1;
-		Mat frame;
-		while(1)
+#ifdef VIDEO
+	VideoCapture video;
+	video.open(SOURCE_VIDEO);
+	if(!video.isOpened())
+		return 1;
+	Mat frame;
+	while(video.read(frame))
+	{
+		resize(frame, frame, Size(0, 0), 0.3f, 0.3f); // video was too big
+		cmachine.SetSource(frame);
+		cmachine.ShowWindows(true); // will work only first time
+		cmachine.Prepare(method); // first time for all, then only for source
+		cmachine.TransferColor();
+		int key = waitKey(5);
+		if(key == 49)
 		{
-			video >> frame;
-			resize(frame, frame, Size(0, 0), 0.3f, 0.3f); // video was too big
-			cmachine.SetSource(frame);
-			cmachine.ShowWindows(true); // will work only first time
-			cmachine.Prepare(method); // first time for all, then only for source
-			cmachine.TransferColor();
-			int key = waitKey(5);
-			if(key == 49)
-			{
-				cmachine.SetMethod(METHOD_REINHARD);
-				method = METHOD_REINHARD;
-				continue;
-			}
-			if(key == 50)
-			{
-				cmachine.SetMethod(METHOD_XIAO);
-				method = METHOD_XIAO;
-				continue;
-			}
-			if(key == 27)
-			{
-				break; // ESCAPE
-			}
+			cmachine.SetMethod(METHOD_REINHARD);
+			method = METHOD_REINHARD;
+			continue;
 		}
-		video.release();
-	#else
+		if(key == 50)
+		{
+			cmachine.SetMethod(METHOD_XIAO);
+			method = METHOD_XIAO;
+			continue;
+		}
+		if(key == 27)
+		{
+			break; // ESCAPE
+		}
+	}
+	video.release();
+#else
 	cmachine.SetSource(SOURCE_PIC);
 	while(1)
 	{
