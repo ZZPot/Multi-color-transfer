@@ -274,7 +274,7 @@ void ColorMachine::ShowWindows(bool show)
 			CreateWindowIT(layer.second, wnd_w, wnd_h, layer.second->name);
 			moveWindow(layer.second->name,
 				(wnd_w + FRAMES_WIDTH) * (row_count % WND_ROW),
-				(wnd_h + TOOLBAR_HEIGHT) * (row_count / WND_ROW));
+				(wnd_h + TOOLBAR_HEIGHT*TB_COUNT) * (row_count / WND_ROW));
 			row_count++;
 		}
 		CreateWindowIT(&_source, wnd_w, wnd_h, _wnd_original);
@@ -326,7 +326,7 @@ void GetWindowsSize(int* width, int* height, unsigned count)
 	*width = 300;
 	*height = 200;
 	*width += FRAMES_WIDTH;
-	*height += TOOLBAR_HEIGHT;
+	*height += TOOLBAR_HEIGHT*TB_COUNT;
 }
 void OnTrackBarChanged(int new_pos, void* param)
 {
