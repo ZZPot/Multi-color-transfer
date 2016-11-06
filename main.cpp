@@ -8,10 +8,15 @@
 
 using namespace cv;
 
-//#define VIDEO
+#define VIDEO
+
 #ifdef VIDEO
 	// SET YOUR VIDEO
 	#define SOURCE_VIDEO "../Time-lapse.flv"
+	#define SAVE_VIDEO 
+#ifdef SAVE_VIDEO
+	#define OUTPUT_FILE	"colored.avi"
+#endif
 #else
 	#define SOURCE_PIC "source/1.jpg"
 #endif
@@ -36,13 +41,23 @@ int main()
 	if(!video.isOpened())
 		return 1;
 	Mat frame;
+	VideoWriter writer;
 	while(video.read(frame))
 	{
-		resize(frame, frame, Size(0, 0), 0.3f, 0.3f); // video was too big
+		if((frame.cols >=1024) || (frame.rows >= 800))
+		{
+			resize(frame, frame, Size(0, 0), 0.5f, 0.5f); // video was too big
+		}
 		cmachine.SetSource(frame);
 		cmachine.ShowWindows(true); // will work only first time
 		cmachine.Prepare(method); // first time for all, then only for source
-		cmachine.TransferColor();
+		Mat colored = cmachine.TransferColor();
+#ifdef SAVE_VIDEO
+		if (!writer.isOpened())
+			writer.open(OUTPUT_FILE, VideoWriter::fourcc('X','V','I','D'),
+			30, colored.size());
+		writer << colored;
+#endif
 		int key = waitKey(5);
 		if(key == 49)
 		{
