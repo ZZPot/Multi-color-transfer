@@ -12,25 +12,25 @@ using namespace cv;
 
 #ifdef VIDEO
 	// SET YOUR VIDEO
-	#define SOURCE_VIDEO "../Time-lapse.flv"
+	#define SOURCE_VIDEO "../Cyberpunk 2077 - Official Cinematic Trailer ft. Keanu Reeves  E3 2019.mp4"
 	#define SAVE_VIDEO 
-#ifdef SAVE_VIDEO
-	#define OUTPUT_FILE	"colored.avi"
-#endif
+	#ifdef SAVE_VIDEO
+		#define OUTPUT_FILE	"colored.avi"
+	#endif
 #else
-	#define SOURCE_PIC "source/1.jpg"
+	#define SOURCE_PIC _T("source/1.jpg")
 #endif
 
-std::vector<std::string> images = {
-									"images/1.jpg",
-									"images/2.jpg",
-									"images/3.jpg",
-									"images/4.jpg",
+std::vector<std::tstring> images = {
+									_T("images/1.jpg"),
+									_T("images/2.jpg"),
+									_T("images/3.jpg"),
+									_T("images/4.jpg"),
 									};
 
 int main()
 {
-	ColorMachine cmachine("1");
+	ColorMachine cmachine(_T("1"));
 	for(auto image: images)
 		cmachine.AddLayer(image);
 	transfer_method method = METHOD_REINHARD;

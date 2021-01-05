@@ -11,7 +11,7 @@
 
 std::string tb_names[3] = {"W1", "W2", "W3"};
 
-img_trans::img_trans(std::string fname): channel_w(0, 0, 0)
+img_trans::img_trans(std::tstring fname): channel_w(0, 0, 0)
 {
 	SetImg(fname);
 }
@@ -23,10 +23,10 @@ img_trans::img_trans(): channel_w(0, 0, 0)
 {
 	current_cs = CS_UNDEFINED;
 }
-void img_trans::SetImg(std::string fname)
+void img_trans::SetImg(std::tstring fname)
 {
 	name = fname;
-	img = cv::imread(fname);
+	img = cv::imread(TcharToChar(fname.c_str(), CP_ACP));
 	if(!img.channels())
 		return;
 	current_cs = CS_BGR;
@@ -64,10 +64,10 @@ color_space img_trans::ConvertTo(color_space cs)
 		switch (current_cs)
 		{
 		case CS_BGR:
-			cv::cvtColor(img, img, CV_BGR2RGB);
+			cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
 			break;
 		case CS_Lalphabeta:
-			cv::cvtColor(img, LabtoBGR(img), CV_BGR2RGB);
+			cv::cvtColor(img, LabtoBGR(img), cv::COLOR_BGR2RGB);
 			break;
 		default:
 			return CS_UNDEFINED;
@@ -77,7 +77,7 @@ color_space img_trans::ConvertTo(color_space cs)
 		switch (current_cs)
 		{
 		case CS_RGB:
-			cv::cvtColor(img, img, CV_RGB2BGR);
+			cv::cvtColor(img, img, cv::COLOR_RGB2BGR);
 			break;
 		case CS_Lalphabeta:
 			img = LabtoBGR(img);
@@ -90,7 +90,7 @@ color_space img_trans::ConvertTo(color_space cs)
 		switch (current_cs)
 		{
 		case CS_RGB:
-			cv::cvtColor(img, img, CV_RGB2BGR);
+			cv::cvtColor(img, img, cv::COLOR_RGB2BGR);
 			img = BGRtoLab(img);
 			break;
 		case CS_BGR:
@@ -139,17 +139,17 @@ cv::Mat CTW(img_trans& source, std::map<unsigned, img_trans*>& layers, transfer_
 	}
 	return cv::Mat();
 }
-ColorMachine::ColorMachine(std::string name)
+ColorMachine::ColorMachine(std::tstring name)
 {
 	if(name.size())
 	{
-		_name = "_";
+		_name = _T("_");
 		_name += name;
 	}
 	else
-		_name = CreateRandomName(WND_RAND_NUM, "_"); // result will be like "_123"
-	_wnd_original = WND_ORIGINAL + _name; // "Original_name"
-	_wnd_result = WND_RESULT + _name; // "Result_name"
+		_name = CreateRandomName(WND_RAND_NUM, _T("_")); // result will be like "_123"
+	_wnd_original = TcharToChar((WND_ORIGINAL + _name).c_str(), CP_ACP); // "Original_name"
+	_wnd_result = TcharToChar((WND_RESULT + _name).c_str(), CP_ACP); // "Result_name"
 	_show = false;
 	_current_method = METHOD_NONE;
 	_source.SetWeight(1);
@@ -170,13 +170,13 @@ ColorMachine::~ColorMachine()
 		delete layer.second;
 	}
 }
-unsigned ColorMachine::AddLayer(cv::Mat layer, std::string name)
+unsigned ColorMachine::AddLayer(cv::Mat layer, std::tstring name)
 {
 	img_trans* temp = new img_trans(layer);
 	if(name.size())
 	{
-		name = WND_LAYER + _name + "_";
-		name = CreateRandomName(WND_RAND_NUM, name); // "Layer_name_456"
+		name = WND_LAYER + _name + _T("_");
+		name = CreateRandomName(WND_RAND_NUM, name.c_str()); // "Layer_name_456"
 	}
 	else
 		name += _name; // "SpecialImage_name"
@@ -194,15 +194,15 @@ unsigned ColorMachine::AddLayer(cv::Mat layer, std::string name)
 		int wnd_w, wnd_h;
 		GetWindowsSize(&wnd_w, &wnd_h, WND_ROW);
 		CreateWindowIT(temp, wnd_w, wnd_h, temp->name);
-			moveWindow(temp->name,
+			cv::moveWindow(TcharToChar(temp->name.c_str(), CP_ACP),
 				(wnd_w + FRAMES_WIDTH) * (_layers.size() % WND_ROW),
 				(wnd_h + TOOLBAR_HEIGHT) * (_layers.size() / WND_ROW));
 	}
 	return _next_id++;
 }
-unsigned ColorMachine::AddLayer(std::string file_name)
+unsigned ColorMachine::AddLayer(std::tstring file_name)
 {
-	return AddLayer(cv::imread(file_name), file_name);
+	return AddLayer(cv::imread(TcharToChar(file_name.c_str(), CP_ACP)), file_name);
 }
 img_trans* ColorMachine::GetLayer(unsigned layer_id)
 {
@@ -217,7 +217,7 @@ void ColorMachine::DeleteLayer(unsigned layer_id)
 	if(found != _layers.end())
 	{
 		if(_show)
-			cv::destroyWindow(found->second->name);
+			cv::destroyWindow(TcharToChar(found->second->name.c_str(), CP_ACP));
 		delete found->second;
 		_layers.erase(found);
 	}
@@ -229,9 +229,9 @@ void ColorMachine::SetSource(cv::Mat source)
 	if(_show)
 		imshow(_wnd_original, _source.img);
 }
-void ColorMachine::SetSource(std::string file_name)
+void ColorMachine::SetSource(std::tstring file_name)
 {
-	SetSource(cv::imread(file_name));
+	SetSource(cv::imread(TcharToChar(file_name.c_str(), CP_ACP)));
 }
 void ColorMachine::Prepare(transfer_method method)
 {
@@ -272,52 +272,37 @@ void ColorMachine::ShowWindows(bool show)
 		for(auto layer: _layers)
 		{
 			CreateWindowIT(layer.second, wnd_w, wnd_h, layer.second->name);
-			moveWindow(layer.second->name,
+			cv::moveWindow(TcharToChar(layer.second->name.c_str(), CP_ACP),
 				(wnd_w + FRAMES_WIDTH) * (row_count % WND_ROW),
 				(wnd_h + TOOLBAR_HEIGHT*TB_COUNT) * (row_count / WND_ROW));
 			row_count++;
 		}
-		CreateWindowIT(&_source, wnd_w, wnd_h, _wnd_original);
+		CreateWindowIT(&_source, wnd_w, wnd_h, CharToTchar(_wnd_original.c_str(), CP_ACP));
 		int wnd_top = (row_count + WND_ROW - 1) / WND_ROW  * (wnd_h + TOOLBAR_HEIGHT);
-		moveWindow(_wnd_original, 0, wnd_top);
-		namedWindow(_wnd_result);
-		moveWindow(_wnd_result, wnd_w + FRAMES_WIDTH, wnd_top);
+		cv::moveWindow(_wnd_original, 0, wnd_top);
+		cv::namedWindow(_wnd_result);
+		cv::moveWindow(_wnd_result, wnd_w + FRAMES_WIDTH, wnd_top);
 	}
 	else
 	{
 		for(auto& layer: _layers)
-			destroyWindow(layer.second->name);
-		destroyWindow(_wnd_original);
-		destroyWindow(_wnd_result);
+			cv::destroyWindow(TcharToChar(layer.second->name.c_str(), CP_ACP));
+		cv::destroyWindow(_wnd_original);
+		cv::destroyWindow(_wnd_result);
 	}
 	_show = show;
 }
-std::string CreateRandomName(unsigned num_chars, std::string prefix, std::string postfix)
+void CreateWindowIT(img_trans* it, int width, int height, std::tstring wnd_name)
 {
-	std::string new_name = prefix;
-	if(num_chars > RANDOM_NAME_MAX_CHARS)
-		num_chars = RANDOM_NAME_MAX_CHARS;
-	unsigned u_rand;
-	char rand_chunk[RANDOM_CHUNK_SIZE + 1];
-	for(; num_chars; num_chars -= cv::min<unsigned>(num_chars, RANDOM_CHUNK_SIZE))
-	{
-		rand_s(&u_rand);
-		itoa(u_rand % (unsigned)pow(10, cv::min<unsigned>(num_chars, RANDOM_CHUNK_SIZE)), rand_chunk, 10);
-		new_name += rand_chunk;
-	}
-	new_name += postfix;
-	return new_name;
-}
-void CreateWindowIT(img_trans* it, int width, int height, cv::String& wnd_name)
-{
-	namedWindow(wnd_name, cv::WINDOW_KEEPRATIO);
-	resizeWindow(wnd_name, width, height); // should be resized before creating trackbar
+	cv::String cv_wnd_name = TcharToChar(wnd_name.c_str(), CP_ACP);
+	cv::namedWindow(cv_wnd_name, cv::WINDOW_KEEPRATIO);
+	cv::resizeWindow(cv_wnd_name, width, height); // should be resized before creating trackbar
 	it->ConvertTo(CS_BGR);
-	imshow(wnd_name, it->img);
+	cv::imshow(cv_wnd_name, it->img);
 	for(unsigned i = 0; i < TB_COUNT; i++)
 	{
 		int init_val = it->channel_w[i];
-		createTrackbar(it->tb_params[i].tb_name, wnd_name, &init_val, MAX_WEIGHT_VAL, OnTrackBarChanged, &it->tb_params[i]); 
+		cv::createTrackbar(it->tb_params[i].tb_name, cv_wnd_name, &init_val, MAX_WEIGHT_VAL, OnTrackBarChanged, &it->tb_params[i]);
 	}
 }
 void GetWindowsSize(int* width, int* height, unsigned count)

@@ -55,7 +55,7 @@ cv::Mat CTP_Xiao::GetParam(int param)
 void GetTRS(cv::Mat input, cv::Mat& T, cv::Mat& R, cv::Mat& S)
 {
 	cv::Mat cov, means;
-	cv::calcCovarMatrix(input.reshape(1, input.cols * input.rows), cov, means, CV_COVAR_NORMAL | CV_COVAR_ROWS, CV_64F);
+	cv::calcCovarMatrix(input.reshape(1, input.cols * input.rows), cov, means, cv::CovarFlags::COVAR_NORMAL | cv::CovarFlags::COVAR_ROWS, CV_64F);
 	cv::Mat U, A, VT;
 	cv::SVD::compute(cov, A, U, VT);
 	T = cv::Mat::eye(4, 4, CV_64FC1);
@@ -77,7 +77,7 @@ void GetTRS(cv::Mat input, cv::Mat& T, cv::Mat& R, cv::Mat& S)
 void GetSRT(cv::Mat input, cv::Mat& T, cv::Mat& R, cv::Mat& S)
 {
 	cv::Mat cov, means;
-	cv::calcCovarMatrix(input.reshape(1, input.cols * input.rows), cov, means, CV_COVAR_NORMAL | CV_COVAR_ROWS, CV_64F);
+	cv::calcCovarMatrix(input.reshape(1, input.cols * input.rows), cov, means, cv::CovarFlags::COVAR_NORMAL | cv::CovarFlags::COVAR_ROWS, CV_64F);
 	cv::Mat U, A, VT;
 	cv::SVD::compute(cov, A, U, VT);
 	T = cv::Mat::eye(4, 4, CV_64FC1);

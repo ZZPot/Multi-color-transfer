@@ -94,13 +94,14 @@ cv::Mat Reinhard(img_trans& source, std::map<unsigned, img_trans*>& layers)
 cv::Mat BGRtoLab(cv::Mat input)
 {
 	cv::Mat img_RGB;
-	cv::cvtColor(input, img_RGB, CV_BGR2RGB);
+	cv::cvtColor(input, img_RGB, cv::COLOR_BGR2RGB);
 #ifdef ESCAPE_ZEROS_RGB
 	cv::Mat min_mat = cv::Mat::Mat(img_RGB.size(), CV_8UC3, cv::Scalar(1, 1, 1));
 	cv::max(img_RGB, min_mat, img_RGB);
 #endif
 	img_RGB.convertTo(img_RGB, CV_32FC1, 1/255.f);
 	cv::Mat img_lms;
+	
 	cv::transform(img_RGB, img_lms, RGB_to_LMS);
 #ifndef ESCAPE_ZEROS_RGB
 	cv::Mat min_mat = cv::Mat::Mat(img_RGB.size(), CV_32FC3, cv::Scalar(0.0001, 0.0001, 0.0001));
@@ -122,7 +123,7 @@ cv::Mat LabtoBGR(cv::Mat input)
 	cv::transform(img_lms, img_RGB, LMS_to_RGB);
 	img_RGB.convertTo(img_RGB, CV_8UC1, 255.f);
 	cv::Mat img_BGR;
-	cv::cvtColor(img_RGB, img_BGR, CV_RGB2BGR);
+	cv::cvtColor(img_RGB, img_BGR, cv::COLOR_RGB2BGR);
 	return img_BGR;
 }
 void CTP_Reinhard::SetParams(cv::Mat img)
